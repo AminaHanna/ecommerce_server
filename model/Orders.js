@@ -10,11 +10,11 @@ const adminSchema = new mongoose.Schema({
         required: [true, "Please add the lastname"],
     },
     productId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         required: [true, "Please add the product id"],
     },
     userId: {
-        type: String,
+        type:  mongoose.Schema.Types.ObjectId,
         required: [true, "Please add the user id"],
     },
 },
