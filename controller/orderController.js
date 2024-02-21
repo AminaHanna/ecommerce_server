@@ -1,13 +1,19 @@
 import mongoose from "mongoose";
 import { Product } from "../model/Product.js";
+import jwt from "jsonwebtoken"
+
 
 import { Order } from "../model/Orders.js";
+import { Transaction } from "../model/Transaction.js";
+import { Cart } from "../model/Cart.js";
 
 
 export const createOrder =async (req, res) => {
 
 
-    console.log(req.body)
+    // console.log(req.body)
+
+
     // return true
 
     try {
@@ -27,6 +33,26 @@ export const createOrder =async (req, res) => {
             return res.status(400).json({ message: "userId is missing" })
         }
 
+        const id = Math.random().toString(16).slice(2)
+    
+
+        const isProduct = await Product.findById(req.body.productId)
+
+     
+        if(!isProduct){
+            return res.status(400).json({message:'product is not existing'})
+        }
+
+        const newTransaction = new Transaction({
+            productId:req.body.productId,
+            userId:req.body.userId,
+            transactionId:id
+        })
+
+        const savedPayment = newTransaction.save()
+
+
+
         const newOrder = new Order({
             fname,
             lname,
@@ -43,89 +69,69 @@ export const createOrder =async (req, res) => {
     }
 }
 
-export const getOrders = async (req, res) => {
+export const addToCart = async (req, res) => {
+    console.log(req.body.productId)
+    if(!req.body.productId){
+        return res.status(404).json({message: 'error' })
+    }
+    console.log(req.headers.authorization);
+    if(!req.headers.authorization){
+        return res.status(400).json({message:"not token"})
+    }
+    jwt.verify(req.headers.authorization, process.env.JWT_SECRET_KEY,async function(err, decoded) {
+        console.log(decoded)
+        const newCart = new Cart({
+            productId:req.body.productId,
+            userId:decoded.userId
+        })
+        const savedCart =await newCart.save();
+        return res.status(200).json({ cart: savedCart });
 
-    const or = await Order.find()
-    console.log(or)
-    
-    const orders= await Order.aggregate([
-        {
-            $lookup:{
-                from:"products",
-                localField:"productId",
-                foreignField:"_id",
-                as:"products"
+         
+    })
+
+
+
+}
+
+export const listCart = async (req, res) => {
+
+    try {
+
+      
+
+        console.log(req.headers.authorization);
+        jwt.verify(req.headers.authorization, process.env.JWT_SECRET_KEY,async function(err, decoded) {
+        console.log(decoded)
+
+        const listCart = await Cart.aggregate([
+            {
+                $match:{userId:new mongoose.Types.ObjectId(decoded.userId) }
+            },
+            {
+                $lookup:{
+                    from:"products",
+                    localField:"productId",
+                    foreignField:"_id",
+                    as:"product"
+                }
             }
-        }
-    ])
-    
-    
-    // return true
-    // console.log(orders,'orders')
-    const count= await Order.countDocuments();
 
 
+        ])
 
+            if(!listCart){
+                return res.status(400).json({message:'cart not found'})
+            }
 
+            console.log(listCart)
+            return res.status(200).json({data:listCart})
 
-    if (orders.length === 0) {
-        return res.status(200).json({products:orders});
-    } else {
-        return res.status(200).json({ products: orders,count:count });
-    }
-}
+        })
 
-
-export const getProductById = async (req, res) => {
-
-    const response = await mongoose.connection.collection("product").findOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
-
-    if (response) {
-        return res.status(200).json({ product: response });
-    } else {
-        return res.status(404).json("no entries yet");
-    }
-}
-
-export const deleteProductById = async (req, res) => {
-
-    try {
-        // console.log(req.params.id)
-        // return true
-        if(!req.params.id){
-            return res.status(400).json({ message: "error while deleting!" });
-        }
-    
-        await Product.findByIdAndDelete(req.params.id)
-            return res.status(200).json({ message: "deleted" });
-        
     } catch (error) {
-        return res.status(200).json({ message: error.message || "deleted" });
-        
+        return res.status(400).json({ message: error.message || 'error' })
+
     }
+
 }
-
-
-export const updateProductById = async (req, res) => {
-
-    console.log(req.params.id);
-
-    // return true
-
-    // const response = await mongoose.connection.collection("product").findOneAndUpdate({ _id: new mongoose.Types.ObjectId(req.params.id) },{$set:req.body})
-    try {
-        
-        if(!req.params.id){
-            return res.status(400).json({ message: "error while deleting!" });
-        }
-    
-        await Product.findByIdAndUpdate(req.params.id,{$set:req.body})
-            return res.status(200).json({ message: "updated" });
-        
-    } catch (error) {
-        return res.status(400).json({ message: error.message || "updated" });
-        
-    }
-   
-}
-

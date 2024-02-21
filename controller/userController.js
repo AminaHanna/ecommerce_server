@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import { User } from "../model/userModel.js";
 import jwt  from "jsonwebtoken";
 import dotenv from "dotenv";
+import { Transaction } from "../model/Transaction.js";
+import { Cart } from "../model/Cart.js";
 
 
 export const register = (req, res) => {
@@ -105,6 +107,48 @@ export const getUsers = async (req, res) => {
 
             return res.status(200).json({ users: getUsers })
         }
+
+    } catch (error) {
+        return res.status(400).json({ message: error.message || 'error' })
+
+    }
+
+}
+
+export const getTransactions = async (req, res) => {
+
+    try {
+
+      
+
+        console.log(req.headers.authorization);
+        jwt.verify(req.headers.authorization, process.env.JWT_SECRET_KEY,async function(err, decoded) {
+        console.log(decoded) // bar
+
+        const getTransaction = await Transaction.aggregate([
+            {
+                $match:{userId:new mongoose.Types.ObjectId(decoded.userId) }
+            },
+            {
+                $lookup:{
+                    from:"products",
+                    localField:"productId",
+                    foreignField:"_id",
+                    as:"product"
+                }
+            }
+
+
+        ])
+
+            if(!getTransaction){
+                return res.status(400).json({message:'not transations found'})
+            }
+
+            console.log(getTransaction)
+            return res.status(200).json({data:getTransaction})
+
+        })
 
     } catch (error) {
         return res.status(400).json({ message: error.message || 'error' })
