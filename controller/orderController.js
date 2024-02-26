@@ -7,14 +7,8 @@ import { Order } from "../model/Orders.js";
 import { Transaction } from "../model/Transaction.js";
 import { Cart } from "../model/Cart.js";
 
-
 export const createOrder =async (req, res) => {
 
-
-    // console.log(req.body)
-
-
-    // return true
 
     try {
         const { fname, lname, userId, productId } = req.body
@@ -69,6 +63,52 @@ export const createOrder =async (req, res) => {
     }
 }
 
+export const getOrders = async (req, res) => {
+
+    const or = await Order.find()
+    console.log(req.headers.authorization);
+    // return true
+
+    if(!req.headers.authorization){
+        return res.status(404).json({message: 'error...' });  
+    }
+        jwt.verify(req.headers.authorization, process.env.JWT_SECRET_KEY,async function(err, decoded) {
+                        console.log(decoded)
+                        
+                    if(err){
+                        return res.status(404).json({message: err.message || 'error...' });  
+                    }
+
+                    console.log(or)
+                    // return true
+
+                    const orders= await Order.aggregate([
+                        {
+                            $match:{userId:new mongoose.Types.ObjectId(decoded.userId) }
+                        },
+                        {
+                            $lookup:{
+                                from:"products",
+                                localField:"productId",
+                                foreignField:"_id",
+                                as:"products"
+                            }
+                        }
+                    ])
+                    // return true
+                    // console.log(orders,'orders')
+                    const count= await Order.countDocuments();
+
+
+                if (orders.length === 0) {
+                    return res.status(200).json({products:orders});
+                } else {
+                    return res.status(200).json({ products: orders,count:count });
+                }
+})
+  
+}
+
 export const addToCart = async (req, res) => {
     console.log(req.body.productId)
     if(!req.body.productId){
@@ -97,8 +137,6 @@ export const addToCart = async (req, res) => {
 export const listCart = async (req, res) => {
 
     try {
-
-      
 
         console.log(req.headers.authorization);
         jwt.verify(req.headers.authorization, process.env.JWT_SECRET_KEY,async function(err, decoded) {

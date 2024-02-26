@@ -4,7 +4,7 @@ import { User } from "../model/userModel.js";
 import jwt  from "jsonwebtoken";
 import dotenv from "dotenv";
 import { Transaction } from "../model/Transaction.js";
-import { Cart } from "../model/Cart.js";
+import { Product } from "../model/Product.js";
 
 
 export const register = (req, res) => {
@@ -119,11 +119,18 @@ export const getTransactions = async (req, res) => {
 
     try {
 
-      
-
         console.log(req.headers.authorization);
+
+        if(!req.headers.authorization){
+            return res.status(404).json({message: 'error...' });  
+        }
+
         jwt.verify(req.headers.authorization, process.env.JWT_SECRET_KEY,async function(err, decoded) {
-        console.log(decoded) // bar
+        console.log(decoded)
+
+        if(err){
+            return res.status(404).json({message: err.message || 'error...' });  
+        }
 
         const getTransaction = await Transaction.aggregate([
             {

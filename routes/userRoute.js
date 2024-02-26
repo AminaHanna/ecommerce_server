@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import { register, login,getUsers, getTransactions } from "../controller/userController.js";
+import { register, login,getUsers,getUser, getTransactions } from "../controller/userController.js";
 import { addToCart, listCart } from "../controller/orderController.js";
 
 

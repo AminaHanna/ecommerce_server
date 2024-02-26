@@ -3,6 +3,7 @@ import cors from "cors";
 import connectDb from "./config/dbConnection.js";
 import adminRoute from "./routes/adminRoute.js";
 import userRouter from "./routes/userRoute.js";
+import orderRoute from "./routes/orderRoute.js";
 import productRouter from "./routes/productRoute.js";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
@@ -21,6 +22,7 @@ app.use("/api/admin", adminRoute);
 app.use("/api/products", productRouter);
 app.use("/api/cart", adminRoute);
 app.use("/api/users", userRouter);
+app.use("/api/orders", orderRoute);
 
 app.get("/api/profile",(req,res)=>{
     console.log("api");
